@@ -13,7 +13,7 @@ close all;
 TNN_THRESHOLD = 0.8;
 TRT_THRESHOLD = 0.6;
 INL_ITERATIONS = 150;
-INL_THRESHOLD = 3;
+INL_THRESHOLD = 300;
 fprintf('Threshold for Thresholed nearest neigbhour: %f.\n ', TNN_THRESHOLD)
 fprintf('Threshold for Thresholed ratio test: %f.\n ', TRT_THRESHOLD)
 fprintf('Number of Iterations for INLIERS CHECK: %d.\n ', INL_ITERATIONS)
@@ -112,20 +112,16 @@ for scenenum = 1:length(scenenames)
         randomIndices = randperm(n1);
         randomIndices_d2 = randperm(n2);
         threeSIFTDescriptors = d1(:, randomIndices(1:3));
-        %trans_template_frame_pos = [];
-        %for index = 1 : 3
-        %    dists = dist2(double(threeSIFTDescriptors(:,index))', double(d2)');
-        %    [sortedDists, sortedIndices] = sort(dists, 'ascend');
-        %    trans_template_frame_pos = [trans_template_frame_pos f2(1:2, sortedIndices(1))];
-        %end
         scene_frame_pos = f1(1:2, randomIndices(1:3));
         trans_template_frame_pos = f2(1:2, randomIndices_d2(1:3));
-        tform = fitgeotrans(trans_template_frame_pos', scene_frame_pos', 'affine');
-        trans_f1 = transformPointsForward(tform, double(f1(1:2, :))');
+        % TODO
+        tform = fitgeotrans( scene_frame_pos', trans_template_frame_pos', 'affine');
         inliers = 0;
-        for index = 1 : size(trans_f1, 1)
-            dists = dist2(double(trans_f1(index, :)), double(f2(1:2, :))');
-            min_dist = min(dists);
+        for index = 1 : size(allMatchMatrix, 2)
+            im1_des_index = allMatchMatrix(1,index);
+            im2_des_index = allMatchMatrix(2,index);
+            trans_f1 = transformPointsForward(tform, f1(1:2,im1_des_index)');
+            min_dist = dist2(double(trans_f1), double(f2(1:2, im2_des_index))');
             if (min_dist <= INL_THRESHOLD)
                 inliers = inliers + 1;
             end
@@ -135,13 +131,13 @@ for scenenum = 1:length(scenenames)
             best_transform = tform;
         end
     end
-    trans_f1 = transformPointsForward(best_transform, f1(1:2, :)');
-    for index = 1 : size(trans_f1, 1)
-        dists = dist2(double(trans_f1(index, :)), double(f2(1:2, :))');
-        [sortedDists, sortedIndices] = sort(dists, 'ascend');
-        if (sortedDists(1) <= INL_THRESHOLD)
-            match_info = [index; sortedIndices(1); sortedDists(1)];
-            INLmatchMatrix = [INLmatchMatrix match_info];
+    for index = 1 : size(allMatchMatrix, 2)
+        im1_des_index = allMatchMatrix(1,index);
+        im2_des_index = allMatchMatrix(2,index);
+        trans_f1 = transformPointsForward(best_transform, f1(1:2,im1_des_index)');
+        min_dist = dist2(double(trans_f1), double(f2(1:2, im2_des_index))');
+        if (min_dist <= INL_THRESHOLD)
+            INLmatchMatrix = [INLmatchMatrix allMatchMatrix(:, index)];
         end
     end
     % We have just one match here, but to use the display functions below, you
