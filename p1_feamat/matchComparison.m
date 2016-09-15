@@ -109,7 +109,7 @@ for scenenum = 1:length(scenenames)
     % Display the matched patch
     clf;
     showMatchingPatches(TNNmatchMatrix, d1, d2, f1, f2, im1, im2, SHOW_ALL_MATCHES_AT_ONCE);
-    fprintf('Showing an example of TNN patch match.  Type dbcont to continue.\n');
+    fprintf('Showing an example of %s:TNN patch match. \n', scenenames(scenenum));
     keyboard;
     
     % An alternate display - show lines connecting the matches (no patches)
@@ -117,13 +117,13 @@ for scenenum = 1:length(scenenames)
     % clutter of the patches.
     clf;
     showLinesBetweenMatches(im1, im2, f1, f2, TNNmatchMatrix);
-    fprintf('Showing the TNN matches with lines connecting.  Type dbcont to continue.\n');
+    fprintf('Showing the %s:TNN matches with lines connecting.\n', scenenames(scenenum));
     keyboard;
 
     % Display the matched patch
     clf;
     showMatchingPatches(TRTmatchMatrix, d1, d2, f1, f2, im1, im2, SHOW_ALL_MATCHES_AT_ONCE);
-    fprintf('Showing an example of TNN patch match.  Type dbcont to continue.\n');
+    fprintf('Showing an example of %s:TRT patch match. \n', scenenames(scenenum));
     keyboard;
     
     % An alternate display - show lines connecting the matches (no patches)
@@ -131,7 +131,6 @@ for scenenum = 1:length(scenenames)
     % clutter of the patches.
     clf;
     showLinesBetweenMatches(im1, im2, f1, f2, TRTmatchMatrix);
-    fprintf('Showing the TNN matches with lines connecting.  Type dbcont to continue.\n');
+    fprintf('Showing the %s:TRT matches with lines connecting.\n', scenenames(scenenum));
     keyboard;
-    fprintf('scenenum=%d\n', scenenum);
 end
