@@ -111,10 +111,8 @@ for scenenum = 1:length(scenenames)
     for INL_ITER = 1:INL_ITERATIONS
         randomIndices = randperm(n1);
         randomIndices_d2 = randperm(n2);
-        %threeSIFTDescriptors = d1(:, randomIndices(1:3));
         trans_template_frame_pos = f1(1:2, randomIndices(1:3));
         scene_frame_pos = f2(1:2, randomIndices_d2(1:3));
-        % TODO
         tform = fitgeotrans(trans_template_frame_pos', scene_frame_pos', 'affine');
         inliers = 0;
         for index = 1 : size(allMatchMatrix, 2)
@@ -140,34 +138,8 @@ for scenenum = 1:length(scenenames)
             INLmatchMatrix = [INLmatchMatrix allMatchMatrix(:, index)];
         end
     end
-    % We have just one match here, but to use the display functions below, you
-    % can simply expand this matrix to include one column for each match.
-    numMatches = size(TNNmatchMatrix,2);
-    
-    % Display the matched patch
-    clf;
-    showMatchingPatches(TNNmatchMatrix, d1, d2, f1, f2, im1, im2, SHOW_ALL_MATCHES_AT_ONCE);
-    fprintf('Showing an example of %s,TNN patch match. \n', scenenames{scenenum});
-    keyboard;
-    
-    % An alternate display - show lines connecting the matches (no patches)
-    clf;
-    showLinesBetweenMatches(im1, im2, f1, f2, TNNmatchMatrix);
-    fprintf('Showing the %s,TNN matches with lines connecting.\n', scenenames{scenenum});
-    keyboard;
 
-    % Display the matched patch
-    clf;
-    showMatchingPatches(TRTmatchMatrix, d1, d2, f1, f2, im1, im2, SHOW_ALL_MATCHES_AT_ONCE);
-    fprintf('Showing an example of %s:TRT patch match. \n', scenenames{scenenum});
-    keyboard;
     
-    % An alternate display - show lines connecting the matches (no patches)
-    clf;
-    showLinesBetweenMatches(im1, im2, f1, f2, TRTmatchMatrix);
-    fprintf('Showing the %s:TRT matches with lines connecting.\n', scenenames{scenenum});
-    keyboard;
-
     % Display the matched patch
     clf;
     showMatchingPatches(INLmatchMatrix, d1, d2, f1, f2, im1, im2, SHOW_ALL_MATCHES_AT_ONCE);
@@ -179,4 +151,15 @@ for scenenum = 1:length(scenenames)
     showLinesBetweenMatches(im1, im2, f1, f2, INLmatchMatrix);
     fprintf('Showing the %s:INL matches with lines connecting.\n', scenenames{scenenum});
     keyboard;
+    % made decision
+    numMatches = size(INLmatchMatrix,2);
+    if (numMatches >= 10) % means present
+        w = size(im1, 2);
+        h = size(im1, 1);
+        corners = [[1 1]; [w 1]; [1, h]; [w h]];
+        trans_corners = transformPointsForward(best_transform, corners);
+        imshow(im2)
+        drawRectangle(trans_corners', 'r');
+    end
+    keyboard
 end
