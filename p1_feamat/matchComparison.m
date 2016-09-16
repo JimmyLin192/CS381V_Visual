@@ -13,7 +13,8 @@ close all;
 TNN_THRESHOLD = 0.8;
 TRT_THRESHOLD = 0.6;
 INL_ITERATIONS = 150;
-INL_THRESHOLD = 300;
+INL_THRESHOLD = 30;
+DETECT_THRESHOLD = 10;
 fprintf('Threshold for Thresholed nearest neigbhour: %f.\n ', TNN_THRESHOLD)
 fprintf('Threshold for Thresholed ratio test: %f.\n ', TRT_THRESHOLD)
 fprintf('Number of Iterations for INLIERS CHECK: %d.\n ', INL_ITERATIONS)
@@ -81,9 +82,6 @@ for scenenum = 1:length(scenenames)
     
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Find the nearest neighbor descriptor in im2 for some random descriptor
-    % from im1:
-
     allMatchMatrix = [];
     TNNmatchMatrix = [];
     TRTmatchMatrix = [];
@@ -109,13 +107,18 @@ for scenenum = 1:length(scenenames)
     INLmatchMatrix = [];
     max_inliers = 0;
     for INL_ITER = 1:INL_ITERATIONS
-        randomIndices = randperm(n1);
-        randomIndices_d2 = randperm(n2);
-        %threeSIFTDescriptors = d1(:, randomIndices(1:3));
-        trans_template_frame_pos = f1(1:2, randomIndices(1:3));
-        scene_frame_pos = f2(1:2, randomIndices_d2(1:3));
-        % TODO
-        tform = fitgeotrans(trans_template_frame_pos', scene_frame_pos', 'affine');
+        randomIndices = randperm(size(allMatchMatrix,2));
+        randomIndices = randomIndices(1:3);
+        im1_des_indices = allMatchMatrix(1, randomIndices);
+        im2_des_indices = allMatchMatrix(2, randomIndices);
+        trans_template_frame_pos = f1(1:2, im1_des_indices);
+        scene_frame_pos = f2(1:2, im2_des_indices);
+        % in case of three random descriptors are positionally co-linear 
+        try
+            tform = fitgeotrans(trans_template_frame_pos', scene_frame_pos', 'affine');
+        catch
+            continue
+        end
         inliers = 0;
         for index = 1 : size(allMatchMatrix, 2)
             im1_des_index = allMatchMatrix(1,index);

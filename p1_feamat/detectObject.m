@@ -12,8 +12,9 @@ close all;
 % THRESHOLD
 TNN_THRESHOLD = 0.8;
 TRT_THRESHOLD = 0.6;
-INL_ITERATIONS = 150;
-INL_THRESHOLD = 300;
+INL_ITERATIONS = 300;
+INL_THRESHOLD = 50;
+DETECT_THRESHOLD = 10;
 fprintf('Threshold for Thresholed nearest neigbhour: %f.\n ', TNN_THRESHOLD)
 fprintf('Threshold for Thresholed ratio test: %f.\n ', TRT_THRESHOLD)
 fprintf('Number of Iterations for INLIERS CHECK: %d.\n ', INL_ITERATIONS)
@@ -81,39 +82,29 @@ for scenenum = 1:length(scenenames)
     
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Find the nearest neighbor descriptor in im2 for some random descriptor
-    % from im1:
-
     allMatchMatrix = [];
-    TNNmatchMatrix = [];
-    TRTmatchMatrix = [];
     for im1_des_index = 1:size(d1,2)
         aSingleSIFTDescriptor = d1(:, im1_des_index);
         dists = dist2(double(aSingleSIFTDescriptor)', double(d2)');
         [sortedDists, sortedIndices] = sort(dists, 'ascend');
         match_info = [im1_des_index; sortedIndices(1); sortedDists(1)];
         allMatchMatrix = [allMatchMatrix match_info];
-        % ratio tests
-        if (sortedDists(1) <= TRT_THRESHOLD * sortedDists(2))
-            TRTmatchMatrix = [TRTmatchMatrix match_info];
-        end
     end
-    mean_dist = mean(allMatchMatrix(3, :));
-    threshold = TNN_THRESHOLD * mean_dist;
-    for match_index = 1:size(allMatchMatrix,2)
-        if (allMatchMatrix(3,match_index) <= threshold)
-            TNNmatchMatrix = [TNNmatchMatrix allMatchMatrix(:,match_index)];
-        end
-    end
-
     INLmatchMatrix = [];
     max_inliers = 0;
     for INL_ITER = 1:INL_ITERATIONS
-        randomIndices = randperm(n1);
-        randomIndices_d2 = randperm(n2);
-        trans_template_frame_pos = f1(1:2, randomIndices(1:3));
-        scene_frame_pos = f2(1:2, randomIndices_d2(1:3));
-        tform = fitgeotrans(trans_template_frame_pos', scene_frame_pos', 'affine');
+        randomIndices = randperm(size(allMatchMatrix,2));
+        randomIndices = randomIndices(1:3);
+        im1_des_indices = allMatchMatrix(1, randomIndices);
+        im2_des_indices = allMatchMatrix(2, randomIndices);
+        trans_template_frame_pos = f1(1:2, im1_des_indices);
+        scene_frame_pos = f2(1:2, im2_des_indices);
+        % in case of three random descriptors are positionally co-linear 
+        try
+            tform = fitgeotrans(trans_template_frame_pos', scene_frame_pos', 'affine');
+        catch
+            continue
+        end
         inliers = 0;
         for index = 1 : size(allMatchMatrix, 2)
             im1_des_index = allMatchMatrix(1,index);
@@ -138,7 +129,6 @@ for scenenum = 1:length(scenenames)
             INLmatchMatrix = [INLmatchMatrix allMatchMatrix(:, index)];
         end
     end
-
     
     % Display the matched patch
     clf;
@@ -151,9 +141,9 @@ for scenenum = 1:length(scenenames)
     showLinesBetweenMatches(im1, im2, f1, f2, INLmatchMatrix);
     fprintf('Showing the %s:INL matches with lines connecting.\n', scenenames{scenenum});
     keyboard;
-    % made decision
+    % made decision and draw the rectangle
     numMatches = size(INLmatchMatrix,2);
-    if (numMatches >= 10) % means present
+    if (numMatches >= DETECT_THRESHOLD) % means present
         w = size(im1, 2);
         h = size(im1, 1);
         corners = [[1 1]; [w 1]; [1, h]; [w h]];
